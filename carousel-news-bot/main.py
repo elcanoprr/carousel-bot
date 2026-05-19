@@ -1,7 +1,6 @@
 import logging
 import random
 import sys
-from datetime import datetime, timezone
 from typing import Dict, List
 
 from scraper import scrape_all
@@ -15,36 +14,41 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Rotate topic focus by time of day so 3 daily runs cover different angles
-TOPIC_ROTATION = {
-    "morning": ["inteligencia artificial", "tecnología e IA"],       # ~12 UTC
-    "afternoon": ["redes sociales"],                                   # ~17 UTC
-    "evening": ["creación de contenido", "tecnología e IA"],          # ~22 UTC
-}
+# Keywords that make an article relevant for a social media content creator
+RELEVANT_KEYWORDS = [
+    # Platforms
+    "instagram", "tiktok", "youtube", "twitter", "facebook", "linkedin",
+    "pinterest", "snapchat", "threads", "reels", "shorts", "x.com",
+    # Creator tools & gear
+    "creator", "content", "influencer", "ugc", "brand deal", "sponsorship",
+    "camera", "lens", "microphone", "lighting", "gimbal", "drone", "tripod",
+    "sony", "canon", "nikon", "gopro", "dji",
+    # Software & apps
+    "capcut", "premiere", "davinci", "final cut", "adobe", "canva",
+    "editing", "scheduling", "analytics",
+    # AI tools for creators
+    "ai tool", "chatgpt", "midjourney", "sora", "runway", "ai video",
+    "ai image", "generative ai", "text to video", "text to image",
+    # Growth & monetization
+    "algorithm", "viral", "engagement", "follower", "subscriber",
+    "monetization", "revenue", "views", "reach", "impressions",
+    # General social / platforms
+    "social media", "social network", "platform", "app update", "new feature",
+    "live stream", "podcast", "newsletter",
+]
 
 
-def get_time_slot() -> str:
-    hour = datetime.now(timezone.utc).hour
-    if hour < 15:
-        return "morning"
-    elif hour < 20:
-        return "afternoon"
-    return "evening"
+def is_relevant(article: Dict) -> bool:
+    text = (article.get("title", "") + " " + article.get("summary", "")).lower()
+    return any(kw in text for kw in RELEVANT_KEYWORDS)
 
 
 def pick_article(articles: List[Dict]) -> Dict:
-    slot = get_time_slot()
-    preferred_topics = TOPIC_ROTATION[slot]
-    logger.info(f"Slot de tiempo: {slot} → temas preferidos: {preferred_topics}")
-
-    preferred = [
-        a for a in articles
-        if a.get("topic") in preferred_topics and len(a.get("summary", "")) > 40
-    ]
-    with_summary = [a for a in articles if len(a.get("summary", "")) > 40]
-    pool = preferred or with_summary or articles
-
-    return random.choice(pool)
+    relevant = [a for a in articles if is_relevant(a)]
+    pool = relevant if relevant else articles
+    # Prefer articles with a summary
+    with_summary = [a for a in pool if len(a.get("summary", "")) > 40]
+    return random.choice(with_summary if with_summary else pool)
 
 
 def main():
@@ -55,7 +59,8 @@ def main():
         logger.error("No se encontraron artículos. Abortando.")
         sys.exit(1)
 
-    logger.info(f"Total artículos encontrados: {len(articles)}")
+    relevant = [a for a in articles if is_relevant(a)]
+    logger.info(f"Artículos totales: {len(articles)} | Relevantes: {len(relevant)}")
 
     article = pick_article(articles)
     logger.info(f"Artículo seleccionado: [{article['source']}] {article['title']}")

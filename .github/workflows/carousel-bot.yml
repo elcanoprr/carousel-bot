@@ -1,15 +1,7 @@
 name: Carousel News Bot
 
 on:
-  schedule:
-    # 6 runs/day (hora Colombia UTC-5)
-    - cron: '0 11 * * *'   # 6am Colombia
-    - cron: '0 13 * * *'   # 8am Colombia
-    - cron: '0 15 * * *'   # 10am Colombia
-    - cron: '0 18 * * *'   # 1pm Colombia
-    - cron: '0 21 * * *'   # 4pm Colombia
-    - cron: '0 23 * * *'   # 6pm Colombia
-  workflow_dispatch:       # ejecución manual desde GitHub
+  workflow_dispatch:  # solo manual — el schedule lo maneja Railway
 
 jobs:
   run-bot:

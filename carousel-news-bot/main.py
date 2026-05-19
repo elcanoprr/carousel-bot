@@ -16,25 +16,18 @@ logger = logging.getLogger(__name__)
 
 # Keywords that make an article relevant for a social media content creator
 RELEVANT_KEYWORDS = [
-    # Platforms
-    "instagram", "tiktok", "youtube", "twitter", "facebook", "linkedin",
-    "pinterest", "snapchat", "threads", "reels", "shorts", "x.com",
-    # Creator tools & gear
-    "creator", "content", "influencer", "ugc", "brand deal", "sponsorship",
-    "camera", "lens", "microphone", "lighting", "gimbal", "drone", "tripod",
-    "sony", "canon", "nikon", "gopro", "dji",
-    # Software & apps
-    "capcut", "premiere", "davinci", "final cut", "adobe", "canva",
-    "editing", "scheduling", "analytics",
-    # AI tools for creators
-    "ai tool", "chatgpt", "midjourney", "sora", "runway", "ai video",
-    "ai image", "generative ai", "text to video", "text to image",
-    # Growth & monetization
-    "algorithm", "viral", "engagement", "follower", "subscriber",
-    "monetization", "revenue", "views", "reach", "impressions",
-    # General social / platforms
-    "social media", "social network", "platform", "app update", "new feature",
-    "live stream", "podcast", "newsletter",
+    # Instagram
+    "instagram", "reels", "stories", "ig ",
+    # Cameras & gear
+    "camera", "cámara", "sony", "canon", "nikon", "fujifilm", "lumix", "panasonic",
+    "gopro", "dji", "lens", "lente", "gimbal", "drone",
+    # Video tools & software
+    "video", "capcut", "premiere", "davinci resolve", "final cut", "after effects",
+    "luts", "color grading", "color correction", "editing", "edición",
+    "microphone", "micrófono", "lighting", "iluminación", "ring light",
+    "teleprompter", "stabilizer", "estabilizador",
+    # Content creation
+    "content creator", "creador de contenido", "youtuber", "tiktoker",
 ]
 
 

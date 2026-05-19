@@ -115,6 +115,47 @@ async def cmd_ahora(update: Update, context: ContextTypes.DEFAULT_TYPE):
     script = generate_carousel_script(article)
     send_to_telegram(script, article)
 
+
+async def cmd_buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    tema = " ".join(context.args).strip() if context.args else ""
+    if not tema:
+        await update.message.reply_text(
+            "Escribe qué quieres buscar:\n\n"
+            "/buscar [término]\n\n"
+            "Ejemplos:\n"
+            "/buscar instagram algorithm\n"
+            "/buscar sony camera 2026\n"
+            "/buscar capcut new feature"
+        )
+        return
+
+    await update.message.reply_text(f"🔍 Buscando: *{tema}*...", parse_mode="Markdown")
+    articles = scrape_all()
+
+    tema_lower = tema.lower()
+    matching = [
+        a for a in articles
+        if tema_lower in (a["title"] + " " + a.get("summary", "")).lower()
+    ]
+
+    if not matching:
+        matching = [a for a in articles if is_relevant(a)]
+
+    if not matching:
+        await update.message.reply_text(
+            f"No encontré noticias sobre *{tema}* ahora mismo.\n"
+            "Intenta con otro término o usa /ahora para la última noticia.",
+            parse_mode="Markdown",
+        )
+        return
+
+    fresh = [a for a in matching if a.get("url", "") not in _used_urls] or matching
+    article = random.choice(fresh[:4])
+    _used_urls.add(article.get("url", ""))
+
+    script = generate_carousel_script(article)
+    send_to_telegram(script, article)
+
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🎬 *Bot de Carruseles activo*\n\n"
@@ -124,20 +165,30 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "✂️ /edits — Edición de video\n"
         "🤖 /ai — AI para marketing\n"
         "🛠️ /herramientas — Herramientas para creadores\n"
-        "⚡ /ahora — Última noticia relevante",
+        "⚡ /ahora — Última noticia relevante\n"
+        "🔍 /buscar [tema] — Busca lo que quieras",
         parse_mode="Markdown",
     )
 
 
-async def scheduled_post():
-    logger.info("Corriendo post programado...")
+async def scheduled_hourly():
+    logger.info("Corriendo posts programados (5 por hora)...")
     articles = scrape_all()
     if not articles:
-        logger.warning("Sin artículos en post programado.")
+        logger.warning("Sin artículos disponibles.")
         return
-    article = pick_fresh_article(articles)
-    script = generate_carousel_script(article)
-    send_to_telegram(script, article)
+
+    relevant = [a for a in articles if is_relevant(a)] or articles
+    sent = 0
+    for _ in range(5):
+        article = pick_fresh_article(relevant)
+        if not article:
+            break
+        script = generate_carousel_script(article)
+        send_to_telegram(script, article)
+        sent += 1
+
+    logger.info(f"{sent} carruseles enviados.")
 
 
 async def post_init(app: Application) -> None:
@@ -147,16 +198,16 @@ async def post_init(app: Application) -> None:
         BotCommand("contenido", "Noticias de creación de contenido"),
         BotCommand("edits", "Noticias sobre edición de video"),
         BotCommand("ai", "AI para marketing"),
-        BotCommand("herramientas", "Herramientas para creadores de contenido"),
-        BotCommand("ahora", "Última noticia relevante ahora mismo"),
+        BotCommand("herramientas", "Herramientas para creadores"),
+        BotCommand("ahora", "Última noticia ahora mismo"),
+        BotCommand("buscar", "Buscar cualquier tema personalizado"),
     ])
 
-    # Start scheduler inside the running event loop
+    # 5 carruseles automáticos cada hora
     scheduler = AsyncIOScheduler()
-    for utc_hour in [11, 13, 15, 18, 21, 23]:
-        scheduler.add_job(scheduled_post, "cron", hour=utc_hour, minute=0)
+    scheduler.add_job(scheduled_hourly, "cron", minute=0)
     scheduler.start()
-    logger.info("Scheduler y comandos configurados.")
+    logger.info("Scheduler configurado: 5 carruseles/hora.")
 
 
 def main():
@@ -168,6 +219,7 @@ def main():
     )
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("ahora", cmd_ahora))
+    app.add_handler(CommandHandler("buscar", cmd_buscar))
     app.add_handler(CommandHandler("instagram", cmd_instagram))
     app.add_handler(CommandHandler("contenido", cmd_contenido))
     app.add_handler(CommandHandler("edits", cmd_edits))

@@ -101,17 +101,25 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-def main():
-    app = Application.builder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("ahora", cmd_ahora))
-    app.add_handler(CommandHandler("buscar", cmd_buscar))
-
-    # Schedule 6 posts/day (UTC hours)
+async def post_init(app: Application) -> None:
+    # Start scheduler inside the running event loop
     scheduler = AsyncIOScheduler()
     for utc_hour in [11, 13, 15, 18, 21, 23]:
         scheduler.add_job(scheduled_post, "cron", hour=utc_hour, minute=0)
     scheduler.start()
+    logger.info("Scheduler iniciado con 6 posts/día.")
+
+
+def main():
+    app = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .post_init(post_init)
+        .build()
+    )
+    app.add_handler(CommandHandler("start", cmd_start))
+    app.add_handler(CommandHandler("ahora", cmd_ahora))
+    app.add_handler(CommandHandler("buscar", cmd_buscar))
 
     logger.info("Bot iniciado — escuchando comandos y enviando posts programados.")
     app.run_polling(allowed_updates=Update.ALL_TYPES)

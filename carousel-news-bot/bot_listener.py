@@ -132,19 +132,17 @@ async def cmd_buscar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"🔍 Buscando: *{tema}*...", parse_mode="Markdown")
     articles = scrape_all()
 
-    tema_lower = tema.lower()
+    # Match any word of the search term against title + summary
+    palabras = tema.lower().split()
     matching = [
         a for a in articles
-        if tema_lower in (a["title"] + " " + a.get("summary", "")).lower()
+        if any(p in (a["title"] + " " + a.get("summary", "")).lower() for p in palabras)
     ]
 
     if not matching:
-        matching = [a for a in articles if is_relevant(a)]
-
-    if not matching:
         await update.message.reply_text(
-            f"No encontré noticias sobre *{tema}* ahora mismo.\n"
-            "Intenta con otro término o usa /ahora para la última noticia.",
+            f"No encontré noticias sobre *{tema}* en este momento.\n"
+            "Las fuentes se actualizan constantemente — intenta en unos minutos o prueba otro término.",
             parse_mode="Markdown",
         )
         return
